@@ -21,8 +21,9 @@ REMOTE_DBG = False
 # append pydev remote debugger
 if REMOTE_DBG:
     try:
-        #sys.path.append(os.environ['HOME'] + r'/.kodi/system/python/Lib/pysrc') # Linux
-        sys.path.append("C:\\eclipse\\plugins\\org.python.pydev_4.0.0.201504132356\\pysrc") # Windows
+        # sys.path.append(os.environ['HOME'] + r'/.kodi/system/python/Lib/pysrc') # Linux
+        sys.path.append(
+            "C:\\eclipse\\plugins\\org.python.pydev_4.0.0.201504132356\\pysrc")  # Windows
         import pydevd
         pydevd.settrace('localhost', port=5678, stdoutToServer=True, stderrToServer=True)
     except ImportError:
@@ -38,17 +39,22 @@ _version_ = _addon_.getAddonInfo('version')
 _first_error_ = False
 _send_errors_ = False
 ###############################################################################
+
+
 def log(msg, level=xbmc.LOGDEBUG):
     if type(msg).__name__ == 'unicode':
         msg = msg.encode('utf-8')
     xbmc.log("[%s] %s" % (_scriptname_, msg.__str__()), level)
 
+
 def logDbg(msg):
     log(msg, level=xbmc.LOGDEBUG)
+
 
 def logErr(msg):
     log(msg, level=xbmc.LOGERROR)
 ###############################################################################
+
 
 def _exception_log(exc_type, exc_value, exc_traceback):
     global _first_error_
@@ -67,14 +73,15 @@ def _exception_log(exc_type, exc_value, exc_traceback):
         else:
             xbmcgui.Dialog().notification(_scriptname_, _lang_(30503), xbmcgui.NOTIFICATION_ERROR)
 
+
 try:
     # First run
     if not (_addon_.getSetting("settings_init_done") == "true"):
-        DEFAULT_SETTING_VALUES = {"quality" : "576p",
-                                  "auto_quality" : "true",
-                                  "quality_fallback" : "true",
-                                  "auto_view_mode" : "true",
-                                  "send_errors" : "false"}
+        DEFAULT_SETTING_VALUES = {"quality": "576p",
+                                  "auto_quality": "true",
+                                  "quality_fallback": "true",
+                                  "auto_view_mode": "true",
+                                  "send_errors": "false"}
         for setting in DEFAULT_SETTING_VALUES.keys():
             val = _addon_.getSetting(setting)
             if not val:
@@ -88,12 +95,14 @@ try:
     _send_errors_ = (_addon_.getSetting('send_errors') == "true")
     _auto_view_mode_ = (_addon_.getSetting('auto_view_mode') == "true")
     _icon_ = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'icon.png'))
-    _next_ = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'next.png'))
-    _previous_ = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'previous.png'))
-    _fanArt = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'fanart1.png'))
+    _next_ = xbmc.translatePath(os.path.join(
+        _addon_.getAddonInfo('path'), 'resources', 'media', 'next.png'))
+    _previous_ = xbmc.translatePath(os.path.join(
+        _addon_.getAddonInfo('path'), 'resources', 'media', 'previous.png'))
+    _fanArt = xbmc.translatePath(os.path.join(
+        _addon_.getAddonInfo('path'), 'resources', 'media', 'fanart1.png'))
     _handle_ = int(sys.argv[1])
     _baseurl_ = sys.argv[0]
-
 
     well_known_error_messages = [('Programme not found!', 30550),
                                  ('Playlisturl is empty!', 30550),
@@ -120,7 +129,8 @@ try:
         fanartFolder = os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'fanart')
         listedDir = os.listdir(fanartFolder)
         r = random.randint(0, len(listedDir) - 1)
-        selected = os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'fanart', listedDir[r])
+        selected = os.path.join(_addon_.getAddonInfo('path'), 'resources',
+                                'media', 'fanart', listedDir[r])
         return xbmc.translatePath(selected)
 
     def _setViewMode(view_mode):
@@ -132,22 +142,23 @@ try:
                     xbmc.executebuiltin('Container.SetViewMode(%d)' % view_mode_id)
 
     def mainMenu():
-        spotlight_labels = { "tipsMain": 30019,
-                             "topDay": 30020,
-                             "topWeek": 30021,
-                             "tipsNote": 30022,
-                             "tipsArchive": 30023,
-                             "watching": 30024 }
+        spotlight_labels = {"tipsMain": 30019,
+                            "topDay": 30020,
+                            "topWeek": 30021,
+                            "tipsNote": 30022,
+                            "tipsArchive": 30023,
+                            "watching": 30024}
         addDirectoryItem(_lang_(30015), _baseurl_ + "?menu=live")
         addDirectoryItem(_lang_(30016), _baseurl_ + "?menu=byDate")
         addDirectoryItem(_lang_(30017), _baseurl_ + "?menu=byLetter")
         addDirectoryItem(_lang_(30018), _baseurl_ + "?menu=byGenre")
         for spotlight in ivysilani.SPOTLIGHTS:
-            addDirectoryItem(_lang_(spotlight_labels[spotlight.ID]), _baseurl_ + "?menu=" + spotlight.ID)
+            addDirectoryItem(_lang_(spotlight_labels[spotlight.ID]),
+                             _baseurl_ + "?menu=" + spotlight.ID)
         xbmcplugin.endOfDirectory(_handle_, updateListing=True)
 
     def addDirectoryItem(label, url, ID=None, related=False, episodes=False, plot=None, title=None, date=None, duration=None,
-                          icon=_icon_, image=None, fanart=None, isFolder=True):
+                         icon=_icon_, image=None, fanart=None, isFolder=True):
         li = xbmcgui.ListItem(label)
         if not title:
             title = label
@@ -170,7 +181,8 @@ try:
             url = _baseurl_ + "?episodes=" + ID
         if ID:
             cm = []
-            cm.append((_lang_(30013), "XBMC.Container.Update(" + _baseurl_ + "?play=" + ID + "&skip_auto=1)"))
+            cm.append((_lang_(30013), "XBMC.Container.Update(" +
+                       _baseurl_ + "?play=" + ID + "&skip_auto=1)"))
             if related:
                 cm.append((_lang_(30003), "XBMC.Container.Update(" + _baseurl_ + "?related=" + ID + ")"))
                 cm.append((_lang_(30004), "XBMC.Container.Update(" + _baseurl_ + "?episodes=" + ID + ")"))
@@ -194,8 +206,9 @@ try:
             if hasattr(item, 'active'):
                 active = (item.active == '1')
             if active:
-                addDirectoryItem(title, url, ID=item.ID, related=True, episodes=episodes, plot=plot, date=date, image=item.imageURL)
-        xbmcplugin.endOfDirectory(_handle_, updateListing=False , cacheToDisc=False)
+                addDirectoryItem(title, url, ID=item.ID, related=True,
+                                 episodes=episodes, plot=plot, date=date, image=item.imageURL)
+        xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def playProgramme(ID, skipAutoQuality=False):
         programme = ivysilani.Programme(ID)
@@ -206,7 +219,8 @@ try:
                 return
         for quality in programme.available_qualities():
             url = programme.url(quality)
-            addDirectoryItem(quality.label(), url=url, title=_toString(programme.title), image=programme.imageURL, isFolder=False)
+            addDirectoryItem(quality.label(), url=url, title=_toString(
+                programme.title), image=programme.imageURL, isFolder=False)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def autoSelectQuality(playable):
@@ -214,10 +228,10 @@ try:
         url = playable.url(setting_quality)
         if url or not _quality_fallback_:
             return url
-        all_qualities = [ "720p", "576p", "404p", "288p", "144p" ]
+        all_qualities = ["720p", "576p", "404p", "288p", "144p"]
         for q in all_qualities:
             quality = ivysilani.Quality(q)
-            if  setting_quality.height < quality.height:
+            if setting_quality.height < quality.height:
                 continue
             url = playable.url(quality)
             if url:
@@ -241,7 +255,8 @@ try:
             if hasattr(live_programme, "ID") and live_programme.ID:
                 try:
                     url = _baseurl_ + "?play=" + liveChannel.ID
-                    addDirectoryItem(title, url, ID=liveChannel.ID, plot=plot, image=live_programme.imageURL)
+                    addDirectoryItem(title, url, ID=liveChannel.ID,
+                                     plot=plot, image=live_programme.imageURL)
                     continue
                 except:
                     pass
@@ -256,12 +271,14 @@ try:
     def playUrl(title, url, image):
         li = xbmcgui.ListItem(title)
         li.setThumbnailImage(image)
-        playlist_file_path = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('profile'), "playlist.m3u8"))
+        playlist_file_path = xbmc.translatePath(os.path.join(
+            _addon_.getAddonInfo('profile'), "playlist.m3u8"))
         urllib.urlretrieve(url, playlist_file_path)
         xbmc.Player().play(playlist_file_path, li)
 
     def playPlayable(playable, skipAutoQuality=False, forceQuality=None):
-        image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'logo_' + playable.ID.lower() + '_400x225.png'))
+        image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo(
+            'path'), 'resources', 'media', 'logo_' + playable.ID.lower() + '_400x225.png'))
         if isinstance(playable, ivysilani.Programme):
             image = playable.imageURL
         if _auto_quality_ and not skipAutoQuality and not forceQuality:
@@ -277,11 +294,13 @@ try:
                 return
         qualities = playable.available_qualities()
         for quality in qualities:
-            addDirectoryItem(quality.label(), url=_baseurl_ + "?force_quality=" + str(quality) + "&play=" + playable.ID, title=_toString(playable.title), image=image, isFolder=False)
+            addDirectoryItem(quality.label(), url=_baseurl_ + "?force_quality=" + str(quality) +
+                             "&play=" + playable.ID, title=_toString(playable.title), image=image, isFolder=False)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def playLiveChannel(liveChannel, skipAutoQuality=False):
-        image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'logo_' + liveChannel.ID.lower() + '_400x225.png'))
+        image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo(
+            'path'), 'resources', 'media', 'logo_' + liveChannel.ID.lower() + '_400x225.png'))
         if _auto_quality_ and not skipAutoQuality:
             url = autoSelectQuality(liveChannel)
             if url:
@@ -290,7 +309,8 @@ try:
         qualities = liveChannel.available_qualities()
         for quality in qualities:
             url = liveChannel.url(quality)
-            addDirectoryItem(quality.label(), url=url, title=_toString(liveChannel.title), image=image, isFolder=False)
+            addDirectoryItem(quality.label(), url=url, title=_toString(
+                liveChannel.title), image=image, isFolder=False)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def selectLiveChannel(ID):
@@ -300,20 +320,23 @@ try:
 
     def listAlphabet():
         for letter in ivysilani.alphabet():
-            addDirectoryItem(letter.title, _baseurl_ + "?letter=" + urllib.quote_plus(_toString(letter.link)))
+            addDirectoryItem(letter.title, _baseurl_ + "?letter=" +
+                             urllib.quote_plus(_toString(letter.link)))
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def listGenres():
         for genre in ivysilani.genres():
-            addDirectoryItem(genre.title, _baseurl_ + "?genre=" + urllib.quote_plus(_toString(genre.link)))
+            addDirectoryItem(genre.title, _baseurl_ + "?genre=" +
+                             urllib.quote_plus(_toString(genre.link)))
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def listDates():
         day_names = []
         for i in range(7):
             day_names.append(_lang_(31000 + i))
-        dt = datetime.now();
-        min_date = datetime.fromtimestamp(time.mktime(time.strptime(ivysilani.DATE_MIN, "%Y-%m-%d")))
+        dt = datetime.now()
+        min_date = datetime.fromtimestamp(time.mktime(
+            time.strptime(ivysilani.DATE_MIN, "%Y-%m-%d")))
         while dt > min_date:
             pretty_date = day_names[dt.weekday()] + " " + dt.strftime("%d.%m.%Y")
             formated_date = dt.strftime("%Y-%m-%d")
@@ -321,10 +344,10 @@ try:
             dt = dt - timedelta(days=1)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
-
     def listChannelsForDate(date):
         for channel in ivysilani.LIVE_CHANNELS:
-            image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo('path'), 'resources', 'media', 'logo_' + channel.ID.lower() + '_400x225.png'))
+            image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo(
+                'path'), 'resources', 'media', 'logo_' + channel.ID.lower() + '_400x225.png'))
             url = _baseurl_ + "?date=" + urllib.quote_plus(date) + "&channel=" + channel.ID
             addDirectoryItem(_toString(channel.title), url, image=image)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
@@ -340,14 +363,17 @@ try:
         elif what == "bonuses":
             l = programme.bonuses(page)
         if page > 1:
-            addDirectoryItem('[B]<< ' + _lang_(30007) + '[/B]', _baseurl_ + "?" + what + "=" + ID + "&page=" + str(page - 1), image=_previous_)
+            addDirectoryItem('[B]<< ' + _lang_(30007) + '[/B]', _baseurl_ + "?" +
+                             what + "=" + ID + "&page=" + str(page - 1), image=_previous_)
         for item in l:
             plot = None
             if hasattr(item, "synopsis") and item.synopsis:
                 plot = item.synopsis
-            addDirectoryItem(item.title, _baseurl_ + "?play=" + item.ID, ID=item.ID, related=True, plot=plot, image=item.imageURL)
+            addDirectoryItem(item.title, _baseurl_ + "?play=" + item.ID,
+                             ID=item.ID, related=True, plot=plot, image=item.imageURL)
         if len(l) == ivysilani.PAGE_SIZE:
-            addDirectoryItem('[B]' + _lang_(30006) + ' >>[/B]', _baseurl_ + "?" + what + "=" + ID + "&page=" + str(page + 1), image=_next_)
+            addDirectoryItem('[B]' + _lang_(30006) + ' >>[/B]', _baseurl_ + "?" +
+                             what + "=" + ID + "&page=" + str(page + 1), image=_next_)
         _setViewMode("Media info")
         xbmcplugin.endOfDirectory(_handle_, updateListing=(page > 1), cacheToDisc=False)
 
@@ -355,9 +381,11 @@ try:
         status = "no status"
         try:
             conn = httplib.HTTPSConnection('script.google.com')
-            req_data = urllib.urlencode({ 'addon' : _scriptname_, 'version' : _version_, 'params' : _toString(params), 'type' : exc_type, 'value' : exc_value, 'traceback' : _toString(traceback.format_exception(exc_type, exc_value, exc_traceback))})
+            req_data = urllib.urlencode({'addon': _scriptname_, 'version': _version_, 'params': _toString(
+                params), 'type': exc_type, 'value': exc_value, 'traceback': _toString(traceback.format_exception(exc_type, exc_value, exc_traceback))})
             headers = {"Content-type": "application/x-www-form-urlencoded"}
-            conn.request(method='POST', url='/macros/s/AKfycbyZfKhi7A_6QurtOhcan9t1W0Tug-F63_CBUwtfkBkZbR2ysFvt/exec', body=req_data, headers=headers)
+            conn.request(method='POST', url='/macros/s/AKfycbyZfKhi7A_6QurtOhcan9t1W0Tug-F63_CBUwtfkBkZbR2ysFvt/exec',
+                         body=req_data, headers=headers)
             resp = conn.getresponse()
             while resp.status >= 300 and resp.status < 400:
                 location = resp.getheader('Location')
@@ -381,21 +409,21 @@ try:
         return False
 
     def get_params():
-            param = []
-            paramstring = sys.argv[2]
-            if len(paramstring) >= 2:
-                    params = sys.argv[2]
-                    cleanedparams = params.replace('?', '')
-                    if (params[len(params) - 1] == '/'):
-                            params = params[0:len(params) - 2]
-                    pairsofparams = cleanedparams.split('&')
-                    param = {}
-                    for i in range(len(pairsofparams)):
-                            splitparams = {}
-                            splitparams = pairsofparams[i].split('=')
-                            if (len(splitparams)) == 2:
-                                    param[splitparams[0]] = splitparams[1]
-            return param
+        param = []
+        paramstring = sys.argv[2]
+        if len(paramstring) >= 2:
+            params = sys.argv[2]
+            cleanedparams = params.replace('?', '')
+            if (params[len(params) - 1] == '/'):
+                params = params[0:len(params) - 2]
+            pairsofparams = cleanedparams.split('&')
+            param = {}
+            for i in range(len(pairsofparams)):
+                splitparams = {}
+                splitparams = pairsofparams[i].split('=')
+                if (len(splitparams)) == 2:
+                    param[splitparams[0]] = splitparams[1]
+        return param
 
     def assign_params(params):
         for param in params:
@@ -478,7 +506,8 @@ try:
         found = False
         for wnm in well_known_error_messages:
             if ex.message == wnm[0]:
-                xbmcgui.Dialog().notification(_scriptname_, _lang_(wnm[1]), xbmcgui.NOTIFICATION_ERROR)
+                xbmcgui.Dialog().notification(
+                    _scriptname_, _lang_(wnm[1]), xbmcgui.NOTIFICATION_ERROR)
                 found = True
         if not found:
             _exception_log(exc_type, exc_value, exc_traceback)
