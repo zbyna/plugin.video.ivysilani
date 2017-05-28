@@ -225,18 +225,18 @@ try:
 
     def autoSelectQuality(playable):
         setting_quality = ivysilani.Quality(_quality_)
-        url = playable.url(setting_quality)
+        url, subtitlesURL = playable.url(setting_quality)
         if url or not _quality_fallback_:
-            return url
+            return (url, subtitlesURL)
         all_qualities = ["720p", "576p", "404p", "288p", "144p"]
         for q in all_qualities:
             quality = ivysilani.Quality(q)
             if setting_quality.height < quality.height:
                 continue
-            url = playable.url(quality)
+            url, subtitlesURL = playable.url(quality)
             if url:
-                return url
-        return None
+                return (url, subtitlesURL)
+        return (None, None)
 
     def listLiveChannels():
         xbmcplugin.setContent(_handle_, "episodes")
@@ -268,9 +268,39 @@ try:
             addDirectoryItem(title, url, image=image)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
-    def playUrl(title, url, image):
+    def ms_to_times(ms):
+        ms = int(round(float(ms)))
+        h, ms = divmod(ms, 3600000)
+        m, ms = divmod(ms, 60000)
+        s, ms = divmod(ms, 1000)
+        return "{:01d}:{:02d}:{:02d}.{:03d}".format(h, m, s, ms)
+
+    def adjustFormat(titulky):
+        noveTitulky = []
+        for item in titulky:
+            if ';' in item:
+                pomItem = item.split(';')
+                noveTitulky.append(pomItem[0] + '\n')
+                pomItem = pomItem[1].split(' ')
+                noveTitulky.append(
+                    '{} --> {}\n'.format(ms_to_times(pomItem[1]), ms_to_times(pomItem[2])))
+            else:
+                noveTitulky.append(item)
+        return noveTitulky
+
+    def playUrl(title, url, image, subtitlesURL):
         li = xbmcgui.ListItem(title)
         li.setThumbnailImage(image)
+        if subtitlesURL:
+            subtitleFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "novetitulky.srt"))
+            urllib.urlretrieve(subtitlesURL, subtitleFilePath)
+            with open(subtitleFilePath, 'r') as subtitleFile:
+                titulky = subtitleFile.readlines()
+            noveTitulky = adjustFormat(titulky)
+            with open(subtitleFilePath, 'w') as vystupSoubor:
+                vystupSoubor.writelines(noveTitulky)
+            li.setSubtitles([subtitleFilePath.decode('utf8')])
         playlist_file_path = xbmc.translatePath(os.path.join(
             _addon_.getAddonInfo('profile'), "playlist.m3u8"))
         urllib.urlretrieve(url, playlist_file_path)
@@ -282,15 +312,15 @@ try:
         if isinstance(playable, ivysilani.Programme):
             image = playable.imageURL
         if _auto_quality_ and not skipAutoQuality and not forceQuality:
-            url = autoSelectQuality(playable)
+            url, subtitlesURL = autoSelectQuality(playable)
             if url:
-                playUrl(playable.title, url, image)
+                playUrl(playable.title, url, image, subtitlesURL)
                 return
         if forceQuality:
             quality = ivysilani.Quality(forceQuality)
-            url = playable.url(quality)
+            url, subtitlesURL = playable.url(quality)
             if url:
-                playUrl(playable.title, url, image)
+                playUrl(playable.title, url, image, subtitlesURL)
                 return
         qualities = playable.available_qualities()
         for quality in qualities:

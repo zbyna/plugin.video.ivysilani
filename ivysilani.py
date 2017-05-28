@@ -10,6 +10,7 @@ import urllib
 import xml.etree.ElementTree as ET
 import time
 import json
+import xbmc
 
 __author__ = "Štěpán Ort"
 __license__ = "MIT"
@@ -179,6 +180,7 @@ class _Playable:
         data = None
         try:
             data = _fetch(PLAYLISTURL_URL, params)
+            xbmc.log('"Data z PLAYLISTURL_URL jsou: "' + str(data))
         except:
             return None
         root = ET.fromstring(data)
@@ -189,11 +191,12 @@ class _Playable:
         playlist_data = resp.read()
         root = ET.fromstring(playlist_data)
         videos = root.findall("smilRoot/body//video")
+        subtitlesURL = root.findtext("metaDataRoot/Playlist/PlaylistItem/SubtitlesURL")
         for video in videos:
             if 'label' not in video.attrib or video.get("label") == quality.quality():
                 url = video.get("src")
         if not url:
-            return None
+            return (None, None)
         switchItem = root.find("smilRoot/body/switchItem")
         if switchItem:
             url = switchItem.get("base") + "/" + url
@@ -201,8 +204,8 @@ class _Playable:
             if urllib2.urlopen(url).getcode() == 200:
                 self._links()[quality] = url
         except urllib2.HTTPError:
-            return None
-        return url
+            return (None, None)
+        return (url, subtitlesURL)
 
 # Kanál
 
@@ -272,6 +275,7 @@ class Programme(_Playable):
                   "imageType": IMAGE_WIDTH,
                   "type[0]": name}
         data = _fetch(PROGRAMMELIST_URL, params)
+        xbmc.log('"Data z PROGRAMMELIST_URL jsou: "' + str(data))
         if data is None:
             return None
         root = ET.fromstring(data)
