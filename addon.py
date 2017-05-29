@@ -77,7 +77,8 @@ def _exception_log(exc_type, exc_value, exc_traceback):
 try:
     # First run
     if not (_addon_.getSetting("settings_init_done") == "true"):
-        DEFAULT_SETTING_VALUES = {"quality": "576p",
+        DEFAULT_SETTING_VALUES = {"subtitles": "true",
+                                  "quality": "576p",
                                   "auto_quality": "true",
                                   "quality_fallback": "true",
                                   "auto_view_mode": "true",
@@ -88,6 +89,7 @@ try:
                 _addon_.setSetting(setting, DEFAULT_SETTING_VALUES[setting])
         _addon_.setSetting("settings_init_done", "true")
     ###############################################################################
+    _subtitles_ = (_addon_.getSetting('subtitles') == "true")
     _auto_quality_ = (_addon_.getSetting('auto_quality') == "true")
     _quality_ = _addon_.getSetting('quality')
     _quality_fallback_ = (_addon_.getSetting('quality_fallback') == "true")
@@ -291,7 +293,7 @@ try:
     def playUrl(title, url, image, subtitlesURL):
         li = xbmcgui.ListItem(title)
         li.setThumbnailImage(image)
-        if subtitlesURL:
+        if subtitlesURL and _subtitles_:
             subtitleFilePath = xbmc.translatePath(os.path.join(
                 _addon_.getAddonInfo('profile'), "novetitulky.srt"))
             urllib.urlretrieve(subtitlesURL, subtitleFilePath)
