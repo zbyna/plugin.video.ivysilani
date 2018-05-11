@@ -278,16 +278,20 @@ try:
         return "{:01d}:{:02d}:{:02d}.{:03d}".format(h, m, s, ms)
 
     def adjustFormat(titulky):
+        validSemicolon = True  # in case that semicolon is in text too
         noveTitulky = []
         for item in titulky:
-            if ';' in item:
+            if ';' in item and validSemicolon:
                 pomItem = item.split(';')
                 noveTitulky.append(pomItem[0] + '\n')
                 pomItem = pomItem[1].split(' ')
                 noveTitulky.append(
                     '{} --> {}\n'.format(ms_to_times(pomItem[1]), ms_to_times(pomItem[2])))
+                validSemicolon = False
             else:
                 noveTitulky.append(item)
+                if item in ['\n', '\r\n']:
+                    validSemicolon = True
         return noveTitulky
 
     def playUrl(title, url, image, subtitlesURL):
