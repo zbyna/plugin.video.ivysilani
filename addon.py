@@ -307,10 +307,10 @@ try:
             with open(subtitleFilePath, 'w') as vystupSoubor:
                 vystupSoubor.writelines(noveTitulky)
             li.setSubtitles([subtitleFilePath.decode('utf8')])
-        playlist_file_path = xbmc.translatePath(os.path.join(
-            _addon_.getAddonInfo('profile'), "playlist.m3u8"))
-        urllib.urlretrieve(url, playlist_file_path)
-        xbmc.Player().play(playlist_file_path, li)
+#         playlist_file_path = xbmc.translatePath(os.path.join(
+#             _addon_.getAddonInfo('profile'), "playlist.m3u8"))
+#         urllib.urlretrieve(url, playlist_file_path)
+        xbmc.Player().play(url, li)
 
     def playPlayable(playable, skipAutoQuality=False, forceQuality=None):
         image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo(
