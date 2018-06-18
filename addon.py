@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+import requests
+import shutil
 import sys
 import xbmc
 import xbmcgui
@@ -77,7 +79,8 @@ def _exception_log(exc_type, exc_value, exc_traceback):
 try:
     # First run
     if not (_addon_.getSetting("settings_init_done") == "true"):
-        DEFAULT_SETTING_VALUES = {"quality": "576p",
+        DEFAULT_SETTING_VALUES = {"subtitles": "true",
+                                  "quality": "576p",
                                   "auto_quality": "true",
                                   "quality_fallback": "true",
                                   "auto_view_mode": "true",
@@ -88,6 +91,7 @@ try:
                 _addon_.setSetting(setting, DEFAULT_SETTING_VALUES[setting])
         _addon_.setSetting("settings_init_done", "true")
     ###############################################################################
+    _subtitles_ = (_addon_.getSetting('subtitles') == "true")
     _auto_quality_ = (_addon_.getSetting('auto_quality') == "true")
     _quality_ = _addon_.getSetting('quality')
     _quality_fallback_ = (_addon_.getSetting('quality_fallback') == "true")
@@ -155,6 +159,7 @@ try:
         for spotlight in ivysilani.SPOTLIGHTS:
             addDirectoryItem(_lang_(spotlight_labels[spotlight.ID]),
                              _baseurl_ + "?menu=" + spotlight.ID)
+        addDirectoryItem(_lang_(30029), 'nastaveni')
         xbmcplugin.endOfDirectory(_handle_, updateListing=True)
 
     def addDirectoryItem(label, url, ID=None, related=False, episodes=False, plot=None, title=None, date=None, duration=None,
@@ -187,7 +192,11 @@ try:
                 cm.append((_lang_(30003), "XBMC.Container.Update(" + _baseurl_ + "?related=" + ID + ")"))
                 cm.append((_lang_(30004), "XBMC.Container.Update(" + _baseurl_ + "?episodes=" + ID + ")"))
                 cm.append((_lang_(30005), "XBMC.Container.Update(" + _baseurl_ + "?bonuses=" + ID + ")"))
+                cm.append((_lang_(30028), "XBMC.Container.Update(" + _baseurl_ +
+                           "?play=" + ID + "&download=1)"))
             li.addContextMenuItems(cm)
+        if url == 'nastaveni':
+            url = _baseurl_ + "?nastaveni=1"
         xbmcplugin.addDirectoryItem(handle=_handle_, url=url, listitem=li, isFolder=isFolder)
 
     def listProgrammelist(programmelist, episodes=False):
@@ -225,18 +234,18 @@ try:
 
     def autoSelectQuality(playable):
         setting_quality = ivysilani.Quality(_quality_)
-        url = playable.url(setting_quality)
+        url, subtitlesURL = playable.url(setting_quality)
         if url or not _quality_fallback_:
-            return url
+            return (url, subtitlesURL)
         all_qualities = ["720p", "576p", "404p", "288p", "144p"]
         for q in all_qualities:
             quality = ivysilani.Quality(q)
             if setting_quality.height < quality.height:
                 continue
-            url = playable.url(quality)
+            url, subtitlesURL = playable.url(quality)
             if url:
-                return url
-        return None
+                return (url, subtitlesURL)
+        return (None, None)
 
     def listLiveChannels():
         xbmcplugin.setContent(_handle_, "episodes")
@@ -268,13 +277,51 @@ try:
             addDirectoryItem(title, url, image=image)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
-    def playUrl(title, url, image):
+    def ms_to_times(ms):
+        ms = int(round(float(ms)))
+        h, ms = divmod(ms, 3600000)
+        m, ms = divmod(ms, 60000)
+        s, ms = divmod(ms, 1000)
+        return "{:01d}:{:02d}:{:02d}.{:03d}".format(h, m, s, ms)
+
+    def adjustFormat(titulky):
+        validSemicolon = True  # in case that semicolon is in text too
+        noveTitulky = []
+        for item in titulky:
+            if ';' in item and validSemicolon:
+                pomItem = item.split(';')
+                noveTitulky.append(pomItem[0] + '\n')
+                pomItem = pomItem[1].split(' ')
+                noveTitulky.append(
+                    '{} --> {}\n'.format(ms_to_times(pomItem[1]), ms_to_times(pomItem[2])))
+                validSemicolon = False
+            else:
+                noveTitulky.append(item)
+                if item in ['\n', '\r\n']:
+                    validSemicolon = True
+        return noveTitulky
+
+    def playUrl(title, url, image, subtitlesURL):
         li = xbmcgui.ListItem(title)
         li.setThumbnailImage(image)
-        playlist_file_path = xbmc.translatePath(os.path.join(
-            _addon_.getAddonInfo('profile'), "playlist.m3u8"))
-        urllib.urlretrieve(url, playlist_file_path)
-        xbmc.Player().play(playlist_file_path, li)
+        if subtitlesURL and _subtitles_:
+            subtitleFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "novetitulky.srt"))
+            urllib.urlretrieve(subtitlesURL, subtitleFilePath)
+            with open(subtitleFilePath, 'r') as subtitleFile:
+                titulky = subtitleFile.readlines()
+            noveTitulky = adjustFormat(titulky)
+            with open(subtitleFilePath, 'w') as vystupSoubor:
+                vystupSoubor.writelines(noveTitulky)
+            li.setSubtitles([subtitleFilePath.decode('utf8')])
+            linkFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "link_na_m3u8.txt"))
+            urllib.urlretrieve(url, linkFilePath)
+            poradFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "adresa_poradu.txt"))
+            with open(poradFilePath, 'w') as vystupSoubor:
+                vystupSoubor.writelines(url)
+        xbmc.Player().play(url, li)
 
     def playPlayable(playable, skipAutoQuality=False, forceQuality=None):
         image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo(
@@ -282,20 +329,132 @@ try:
         if isinstance(playable, ivysilani.Programme):
             image = playable.imageURL
         if _auto_quality_ and not skipAutoQuality and not forceQuality:
-            url = autoSelectQuality(playable)
+            url, subtitlesURL = autoSelectQuality(playable)
             if url:
-                playUrl(playable.title, url, image)
+                playUrl(playable.title, url, image, subtitlesURL)
                 return
         if forceQuality:
             quality = ivysilani.Quality(forceQuality)
-            url = playable.url(quality)
+            url, subtitlesURL = playable.url(quality)
             if url:
-                playUrl(playable.title, url, image)
+                playUrl(playable.title, url, image, subtitlesURL)
                 return
         qualities = playable.available_qualities()
         for quality in qualities:
             addDirectoryItem(quality.label(), url=_baseurl_ + "?force_quality=" + str(quality) +
                              "&play=" + playable.ID, title=_toString(playable.title), image=image, isFolder=False)
+        xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
+
+    def downloadAndMerge(my_url, title):
+        #===========================================================================================
+        # download all ts part of video and merge them to one ts file
+        #===========================================================================================
+        xbmc.log('"downloadAndMerge reached"')
+        r = requests.get(my_url)
+        # r.text.split() - převede str na list
+        playlist = [line.rstrip() for line in r.text.split()
+                    if line.rstrip().endswith('.m3u8')]
+        xbmc.log('"Adresa playlistu je: "' + str(playlist))
+        r = requests.get(playlist[0])
+        xbmc.log('"Výsledek stažení playlistu: "' + str(r.status_code))
+        ts_filenames = [line.rstrip() for line in r.text.split()
+                        if line.rstrip().endswith('.ts')]
+        pocetTSFiles = len(ts_filenames)
+        downloadPath = _addon_.getSetting('download_folder')
+        xbmc.log('"Download folder is: "' + str(downloadPath))
+        ts_local_names = []
+        pDialog = xbmcgui.DialogProgress()
+        ret = pDialog.create('Saving file: ' + title.encode('utf8') + '.ts')
+        for i, ts_file in enumerate(ts_filenames):
+            local_name = ts_file.split('/')[-2] + ts_file.split('/')[-1]
+            downloadFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getSetting('download_folder').decode('utf8'), local_name))
+            xbmc.log('"After translatePath: "' + downloadFilePath)
+            downloadFilePath = xbmc.validatePath(downloadFilePath)
+            xbmc.log('"After validatePath: "' + downloadFilePath)
+            with open(downloadFilePath.decode('utf8'), mode='wb') as localfile:
+                r = requests.get(ts_file)
+                localfile.write(r.content)
+                # end="\r" návrat vozíku, ale nefunkční v emulátoru konzole :-)
+            pDialog.update(int(float(i + 1) / pocetTSFiles * 100),
+                           'downloading part:' + local_name.encode('utf8'))
+            xbmc.log('"Staženo: "' + str(i + 1) + 'z' + str(pocetTSFiles) + '" souborů"')
+            ts_local_names.append(downloadFilePath)
+        pDialog.close()
+        del pDialog
+        # open one ts_file from the list after another and append them to merged.ts
+        mergedFilePath = xbmc.translatePath(os.path.join(
+            _addon_.getSetting('download_folder').decode('utf8'), title + '.ts'))
+        mergedFilePath = xbmc.validatePath(mergedFilePath)
+        xbmc.log('"Spojuju soubory do:" ' + mergedFilePath)
+        pDialog = xbmcgui.DialogProgress()
+        ret = pDialog.create('Merging file', title.encode('utf8') + '.ts and cleaning')
+        with open(mergedFilePath.decode('utf8'), 'wb') as merged:
+            for i, ts_file in enumerate(ts_local_names):
+                ts_file = ts_file.decode('utf8')
+                with open(ts_file, 'rb') as mergefile:
+                    shutil.copyfileobj(mergefile, merged)
+                os.remove(ts_file)
+                pDialog.update(int(float(i + 1) / pocetTSFiles * 100),
+                               'merging part:' + local_name.encode('utf8'))
+            pDialog.close()
+        del(pDialog)
+        xbmc.log('"Download finished :-)"')
+
+    def downloadUrl(title, url, image, subtitlesURL):
+        #===========================================================================================
+        # analogical playPlayable() see line 299
+        #===========================================================================================
+        #         li = xbmcgui.ListItem(title)
+        #         li.setThumbnailImage(image)
+        xbmc.log('"downloadUrl reached"')
+        if subtitlesURL and _subtitles_:
+            subtitleFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "novetitulky.srt"))
+            urllib.urlretrieve(subtitlesURL, subtitleFilePath)
+            with open(subtitleFilePath, 'r') as subtitleFile:
+                titulky = subtitleFile.readlines()
+            noveTitulky = adjustFormat(titulky)
+            with open(subtitleFilePath, 'w') as vystupSoubor:
+                vystupSoubor.writelines(noveTitulky)
+            linkFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "link_na_m3u8.txt"))
+            urllib.urlretrieve(url, linkFilePath)
+            poradFilePath = xbmc.translatePath(os.path.join(
+                _addon_.getAddonInfo('profile'), "adresa_poradu.txt"))
+            with open(poradFilePath, 'w') as vystupSoubor:
+                vystupSoubor.writelines(url)
+        downloadAndMerge(url, title)
+
+    def downloadPlayable(playable, skipAutoQuality=False, forceQuality=None):
+        #===========================================================================================
+        # analogical playPlayable() see line 321, needs to be implemented together with
+        # downloadUrl(title,url,image,subtitlesURL) and downloadAndMerge(my_url,title) see above
+        # needs to cope with skip_auto=1 means user should choose quality for download
+        # for current implementation see line: 195 where it is direct passed skip_auto=0
+        #===========================================================================================
+        xbmc.log('"downloadPlayable reached"')
+        image = xbmc.translatePath(os.path.join(_addon_.getAddonInfo(
+            'path'), 'resources', 'media', 'logo_' + playable.ID.lower() + '_400x225.png'))
+        if isinstance(playable, ivysilani.Programme):
+            image = playable.imageURL
+        if _auto_quality_ and not skipAutoQuality and not forceQuality:
+            url, subtitlesURL = autoSelectQuality(playable)
+            if url:
+                downloadUrl(playable.title, url, image, subtitlesURL)
+                return
+        if forceQuality:
+            quality = ivysilani.Quality(forceQuality)
+            url, subtitlesURL = playable.url(quality)
+            if url:
+                downloadUrl(playable.title, url, image, subtitlesURL)
+                return
+        qualities = playable.available_qualities()
+        xbmc.log('"Quality needs to be choose by user"')
+        for quality in qualities:
+            addDirectoryItem(quality.label(), url=_baseurl_ + "?force_quality=" + str(quality) +
+                             "&play=" + playable.ID + "&download=1",
+                             title=_toString(playable.title), image=image, isFolder=False)
         xbmcplugin.endOfDirectory(_handle_, updateListing=False, cacheToDisc=False)
 
     def playLiveChannel(liveChannel, skipAutoQuality=False):
@@ -433,6 +592,7 @@ try:
                 pass
     menu = None
     play = None
+    download = None
     play_live = None
     genre = None
     letter = None
@@ -444,11 +604,29 @@ try:
     skip_auto = None
     force_quality = None
     page = 1
+    nastaveni = None
     params = get_params()
     assign_params(params)
     page = int(page)
 
     try:
+        xbmc.log('"Params jsou: "' + str(params))
+        if nastaveni:
+            _addon_.openSettings()
+        if download:
+            xbmc.log('"Downloading reached"')
+            skip_auto = (skip_auto is not None and skip_auto != "0")
+            playable = selectLiveChannel(play)
+            if not playable:
+                playable = ivysilani.Programme(play)
+                # needs to be finished
+                downloadPlayable(playable, skip_auto, force_quality)
+            else:
+                xbmc.log('"Sorry, Can not save live streaming"')
+            if _auto_quality_:
+                xbmcplugin.endOfDirectory(_handle_, succeeded=False, cacheToDisc=False)
+            else:
+                play = None
         if play:
             skip_auto = (skip_auto is not None and skip_auto != "0")
             playable = selectLiveChannel(play)

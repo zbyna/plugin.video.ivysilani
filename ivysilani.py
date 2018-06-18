@@ -10,6 +10,7 @@ import urllib
 import xml.etree.ElementTree as ET
 import time
 import json
+import xbmc
 
 __author__ = "Štěpán Ort"
 __license__ = "MIT"
@@ -179,6 +180,7 @@ class _Playable:
         data = None
         try:
             data = _fetch(PLAYLISTURL_URL, params)
+            xbmc.log('"Data z PLAYLISTURL_URL jsou: "' + str(data))
         except:
             return None
         root = ET.fromstring(data)
@@ -189,11 +191,12 @@ class _Playable:
         playlist_data = resp.read()
         root = ET.fromstring(playlist_data)
         videos = root.findall("smilRoot/body//video")
+        subtitlesURL = root.findtext("metaDataRoot/Playlist/PlaylistItem/SubtitlesURL")
         for video in videos:
             if 'label' not in video.attrib or video.get("label") == quality.quality():
                 url = video.get("src")
         if not url:
-            return None
+            return (None, None)
         switchItem = root.find("smilRoot/body/switchItem")
         if switchItem:
             url = switchItem.get("base") + "/" + url
@@ -201,8 +204,8 @@ class _Playable:
             if urllib2.urlopen(url).getcode() == 200:
                 self._links()[quality] = url
         except urllib2.HTTPError:
-            return None
-        return url
+            return (None, None)
+        return (url, subtitlesURL)
 
 # Kanál
 
@@ -272,6 +275,7 @@ class Programme(_Playable):
                   "imageType": IMAGE_WIDTH,
                   "type[0]": name}
         data = _fetch(PROGRAMMELIST_URL, params)
+        xbmc.log('"Data z PROGRAMMELIST_URL jsou: "' + str(data))
         if data is None:
             return None
         root = ET.fromstring(data)
@@ -405,15 +409,15 @@ LIVE_CHANNELS = [LiveChannel("1", "CT1", "ČT1"),
                  LiveChannel("4", "CT4", "ČT Sport"),
                  LiveChannel("5", "CT5", "ČT :D"),
                  LiveChannel("6", "CT6", "ČT art"),
-                 LiveChannel(None, "CT26", "ČT LOH1"),
-                 LiveChannel(None, "CT27", "ČT LOH2"),
-                 LiveChannel(None, "CT28", "ČT LOH3"),
-                 LiveChannel(None, "CT29", "ČT LOH4"),
-                 LiveChannel(None, "CT30", "ČT LOH5"),
-                 LiveChannel(None, "CT31", "ČT LOH6"),
-                 LiveChannel(None, "CT32", "ČT LOH7"),
-                 LiveChannel(None, "CT33", "ČT LOH8"),
-                 LiveChannel(None, "CTmobile03", "ČT LOH Lipno"),
+                 LiveChannel(None, "CT26", "ČT EXTRA 1"),
+                 LiveChannel(None, "CT27", "ČT EXTRA 2"),
+                 LiveChannel(None, "CT28", "ČT EXTRA 3"),
+                 LiveChannel(None, "CT29", "ČT EXTRA 4"),
+                 LiveChannel(None, "CT30", "ČT EXTRA 5"),
+                 LiveChannel(None, "CT31", "ČT EXTRA 6"),
+                 LiveChannel(None, "CT32", "ČT EXTRA 7"),
+                 LiveChannel(None, "CT33", "ČT EXTRA 8"),
+                 LiveChannel(None, "CTmobile03", "ČT EXTRA mobile"),
                  ]
 # 1, 2, 24, 4, 5, 6, 9, 25, 26, 27, 28, 29, mobile, mobile2, mobile03, mobile04, mobile05
 # Výběry
