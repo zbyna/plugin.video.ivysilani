@@ -157,6 +157,7 @@ try:
         for spotlight in ivysilani.SPOTLIGHTS:
             addDirectoryItem(_lang_(spotlight_labels[spotlight.ID]),
                              _baseurl_ + "?menu=" + spotlight.ID)
+        addDirectoryItem(_lang_(30029), 'nastaveni')
         xbmcplugin.endOfDirectory(_handle_, updateListing=True)
 
     def addDirectoryItem(label, url, ID=None, related=False, episodes=False, plot=None, title=None, date=None, duration=None,
@@ -190,6 +191,8 @@ try:
                 cm.append((_lang_(30004), "XBMC.Container.Update(" + _baseurl_ + "?episodes=" + ID + ")"))
                 cm.append((_lang_(30005), "XBMC.Container.Update(" + _baseurl_ + "?bonuses=" + ID + ")"))
             li.addContextMenuItems(cm)
+        if url == 'nastaveni':
+            url = _baseurl_ + "?nastaveni=1"
         xbmcplugin.addDirectoryItem(handle=_handle_, url=url, listitem=li, isFolder=isFolder)
 
     def listProgrammelist(programmelist, episodes=False):
@@ -480,11 +483,14 @@ try:
     skip_auto = None
     force_quality = None
     page = 1
+    nastaveni = None
     params = get_params()
     assign_params(params)
     page = int(page)
 
     try:
+        if nastaveni:
+            _addon_.openSettings()
         if play:
             skip_auto = (skip_auto is not None and skip_auto != "0")
             playable = selectLiveChannel(play)
