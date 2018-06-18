@@ -6,7 +6,7 @@ Tento fork přidává:
 
 ## 1. titulky s přesným časováním
   - ulehčení sledování pořadů pro sluchově postižené
-  - titulky byla vytvořena primárně pro moje rodiče, který děkuji za podporu a testování
+  - funkcionalita byla vytvořena primárně pro moje rodiče, kterým děkuji za podporu a testování
 ## 2. položku ```Nastavení``` do úvodního menu
   - možnost změny nastavení doplňku bez jeho ukončení
 ## 3. položku ```Stáhnout``` pořad v kontextovém menu
