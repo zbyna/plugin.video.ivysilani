@@ -405,25 +405,18 @@ try:
         #===========================================================================================
         # analogical playPlayable() see line 299
         #===========================================================================================
-        #         li = xbmcgui.ListItem(title)
-        #         li.setThumbnailImage(image)
         xbmc.log('"downloadUrl reached"')
         if subtitlesURL and _subtitles_:
             subtitleFilePath = xbmc.translatePath(os.path.join(
-                _addon_.getAddonInfo('profile'), "novetitulky.srt"))
-            urllib.urlretrieve(subtitlesURL, subtitleFilePath)
-            with open(subtitleFilePath, 'r') as subtitleFile:
+                _addon_.getSetting('download_folder').decode('utf8'), title + '.srt'))
+            subtitleFilePath = xbmc.validatePath(subtitleFilePath)
+            subtitleFilePathUnicode = subtitleFilePath.decode('utf8')
+            urllib.urlretrieve(subtitlesURL, subtitleFilePathUnicode)
+            with open(subtitleFilePathUnicode, 'r') as subtitleFile:
                 titulky = subtitleFile.readlines()
             noveTitulky = adjustFormat(titulky)
-            with open(subtitleFilePath, 'w') as vystupSoubor:
+            with open(subtitleFilePathUnicode, 'w') as vystupSoubor:
                 vystupSoubor.writelines(noveTitulky)
-            linkFilePath = xbmc.translatePath(os.path.join(
-                _addon_.getAddonInfo('profile'), "link_na_m3u8.txt"))
-            urllib.urlretrieve(url, linkFilePath)
-            poradFilePath = xbmc.translatePath(os.path.join(
-                _addon_.getAddonInfo('profile'), "adresa_poradu.txt"))
-            with open(poradFilePath, 'w') as vystupSoubor:
-                vystupSoubor.writelines(url)
         downloadAndMerge(url, title)
 
     def downloadPlayable(playable, skipAutoQuality=False, forceQuality=None):
