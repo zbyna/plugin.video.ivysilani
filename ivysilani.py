@@ -179,6 +179,7 @@ class _Playable:
                   "quality": quality.quality()}
         data = None
         try:
+            xbmc.log('" PLAYLISTURL_URL je: "' + PLAYLISTURL_URL)
             data = _fetch(PLAYLISTURL_URL, params)
             xbmc.log('"Data z PLAYLISTURL_URL jsou: "' + str(data))
         except:
@@ -314,11 +315,24 @@ def _https_ceska_televize_fetch(url, params):
                "Accept-encoding": "gzip",
                "Connection": "Keep-Alive",
                "User-Agent": "Dalvik/1.6.0 (Linux; U; Android 4.4.4; Nexus 7 Build/KTU84P)"}
+    xbmc.log('"_https_ceska_televize_fetch ... begin"')
     conn = httplib.HTTPSConnection("www.ceskatelevize.cz")
     conn.request("POST", url, urllib.urlencode(params), headers)
+    xbmc.log('" url je: "' + str(url))
+    xbmc.log('" params jsou: "' + str(params))
     response = conn.getresponse()
+    xbmc.log('"response headers jsou: "' + str(response.getheaders()))
+    xbmc.log('"response status je: "' + str(response.status))
     if response.status == 200:
         data = response.read()
+        if response.getheader('content-encoding', 'default') == 'gzip':
+            try:
+                from cStringIO import StringIO
+                from gzip import GzipFile
+                data2 = GzipFile('', 'r', 0, StringIO(data)).read()
+                data = data2
+            except:
+                xbmc.log('"Decompress error "')
         conn.close()
         return data
     return None
@@ -335,11 +349,14 @@ def _token_refresh():
 
 
 def _fetch(url, params):
+    xbmc.log('"_fetch ... begin"')
     if _token is None:
         _token_refresh()
     params["token"] = _token
+    xbmc.log('"Token je: "' + str(_token))
     data = _https_ceska_televize_fetch(url, params)
     try:
+        xbmc.log('" Data jsou: "' + str(data))
         root = ET.fromstring(data)
     except:
         return None
@@ -347,7 +364,7 @@ def _fetch(url, params):
         if root[0].text == "no token sent" or root[0].text == "wrong token":
             _token_refresh()
             data = _https_ceska_televize_fetch(url, params)
-            xbmc.log('"Data jsou: "' + str(data))
+            xbmc.log('"Data errors jsou: "' + str(data))
         else:
             raise Exception(', '.join([e.text for e in root]))
     return data
