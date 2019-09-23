@@ -517,11 +517,11 @@ try:
         if page > 1:
             addDirectoryItem('[B]<< ' + _lang_(30007) + '[/B]', _baseurl_ + "?" +
                              what + "=" + ID + "&page=" + str(page - 1), image=_previous_)
-        for item in l:
+        for inx, item in enumerate(l, start=0):
             plot = None
             if hasattr(item, "synopsis") and item.synopsis:
                 plot = item.synopsis
-            addDirectoryItem(item.title, _baseurl_ + "?play=" + item.ID,
+            addDirectoryItem(' '.join([str(len(l) - inx) + 'x', item.title]), _baseurl_ + "?play=" + item.ID,
                              ID=item.ID, related=True, plot=plot, image=item.imageURL)
         if len(l) == ivysilani.PAGE_SIZE:
             addDirectoryItem('[B]' + _lang_(30006) + ' >>[/B]', _baseurl_ + "?" +
