@@ -409,9 +409,9 @@ DATE_MIN = "2005-02-01"
 TOKEN_URL = "/services/ivysilani/xml/token/"
 PROGRAMMELIST_URL = "/services/ivysilani/xml/programmelist/"
 PROGRAMMEDETAIL_URL = "/services/ivysilani/xml/programmedetail/"
-GENRELIST_URL = "/services/ivysilani/xml/genrelist/"
+GENRELIST_URL = "/services-old/ivysilani/xml/genrelist/"
 PLAYLISTURL_URL = "/services/ivysilani/xml/playlisturl/"
-ALPHABETLIST_URL = "/services/ivysilani/xml/alphabetlist/"
+ALPHABETLIST_URL = "/services-old/ivysilani/xml/alphabetlist/"
 
 IMAGE_WIDTH = 400  # doporučeno na TheTvDB Wiki
 
